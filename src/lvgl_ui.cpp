@@ -229,13 +229,11 @@ void LVGL_UI::open_compose_with_callsign(const String &callsign) {
 namespace LVGL_UI {
   static void hideLockHint();
 
-  static void unlockScreenFromLock(const char* source) {
+  static void wakeScreenFromSleep(const char* source) {
     const uint32_t now = millis();
     lockHintRequested = false;
     hideLockHint();
-    screenLocked = false;
     screenDimmed = false;
-    lockQPending = false;
     lastActivityTime = now;
     absorbTouchUntilRelease = true;
     displayPanelWake();
@@ -244,6 +242,13 @@ namespace LVGL_UI {
       UIMapManager::redraw_map_canvas();
     }
     SD_Logger::logScreenState(false);
+    ESP_LOGI(TAG, "Screen woken by %s", source);
+  }
+
+  static void unlockScreenFromLock(const char* source) {
+    wakeScreenFromSleep(source);
+    screenLocked = false;
+    lockQPending = false;
     ESP_LOGI(TAG, "Screen unlocked by %s", source);
   }
 
@@ -310,15 +315,22 @@ namespace LVGL_UI {
   }
 
   bool handleScreenLockJoystickShort() {
-    if (!screenLocked) return false;
+    if (!screenLocked && !screenDimmed) return false;
+    if (screenDimmed) {
+      wakeScreenFromSleep("joystick short press");
+    }
     lockHintRequested = true;
     displayPanelWake();
     return true;
   }
 
   bool handleScreenLockJoystickLong() {
-    if (!screenLocked) return false;
-    unlockScreenFromLock("joystick long press");
+    if (!screenLocked && !screenDimmed) return false;
+    if (screenLocked) {
+      unlockScreenFromLock("joystick long press");
+    } else {
+      wakeScreenFromSleep("joystick long press");
+    }
     return true;
   }
 
