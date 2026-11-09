@@ -258,6 +258,21 @@ void displaySetBrightness(uint8_t value) {
     #endif
 }
 
+void displayPanelSleep() {
+    #ifdef HAS_TFT
+    // Put the LCD controller in sleep mode, not only backlight off.
+    tft.sleep();
+    #endif
+}
+
+void displayPanelWake() {
+    #ifdef HAS_TFT
+    // Exit LCD sleep mode then restore configured backlight level.
+    tft.wakeup();
+    tft.setBrightness(screenBrightness);
+    #endif
+}
+
 void displaySetup() {
     delay(500);
     STATION_Utils::loadIndex(2);    // Screen Brightness value
@@ -320,11 +335,9 @@ void displaySetup() {
 
 void displayToggle(bool toggle) {
     if (toggle) {
-        displaySetBrightness(screenBrightness);
+        displayPanelWake();
     } else {
-        #ifdef HAS_TFT
-        tft.setBrightness(0);
-        #endif
+        displayPanelSleep();
     }
 }
 

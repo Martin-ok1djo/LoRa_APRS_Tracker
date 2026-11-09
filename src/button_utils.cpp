@@ -23,6 +23,9 @@
 #include "button_utils.h"
 #include "power_utils.h"
 #include "display.h"
+#ifdef USE_LVGL_UI
+#include "lvgl_ui.h"
+#endif
 
 #ifdef BUTTON_PIN
 
@@ -43,6 +46,9 @@
 
         void singlePress1() {
             menuTime = millis();
+            #if defined(USE_LVGL_UI) && (defined(TTGO_T_DECK_PLUS) || defined(TTGO_T_DECK_GPS))
+                if (LVGL_UI::handleScreenLockJoystickShort()) return;
+            #endif
             KEYBOARD_Utils::downArrow();
         }
         #ifdef RPC_Electronics_1W_LoRa_GPS
@@ -62,6 +68,9 @@
 
         void longPress1() {
             menuTime = millis();
+            #if defined(USE_LVGL_UI) && (defined(TTGO_T_DECK_PLUS) || defined(TTGO_T_DECK_GPS))
+                if (LVGL_UI::handleScreenLockJoystickLong()) return;
+            #endif
             KEYBOARD_Utils::rightArrow();
         }
 
@@ -96,11 +105,9 @@
         void setup() {
             if (!Config.simplifiedTrackerMode) {
                 userButton.attachClick(singlePress1);
-                // Skip longPress on GPIO 0 (boot strapping pin) — prone to
-                // false triggers from SPI/RF noise (e.g. LoRa reception)
-                #if BUTTON_PIN != 0
-                    userButton.attachLongPressStart(longPress1);
-                #endif
+                // Use a conservative hold time on GPIO0 to reduce accidental long-press triggers.
+                userButton.setPressTicks(1100);
+                userButton.attachLongPressStart(longPress1);
                 // The legacy text menu is not used by the T-Deck LVGL UI.
                 // These callbacks would turn on the backlight without unlocking
                 // the screen, leaving the lit display apparently unresponsive.

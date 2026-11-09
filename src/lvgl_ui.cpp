@@ -150,7 +150,8 @@ static bool absorbTouchUntilRelease = false;   // absorbe le toucher de réveil 
 static void touch_read_cb(lv_indev_drv_t *drv, lv_indev_data_t *data) {
   uint16_t x, y;
   if (screenLocked) {
-    if (tft.getTouch(&x, &y)) lockHintRequested = true;
+    // Ignore touch while locked to avoid accidental wake/interaction in pocket.
+    tft.getTouch(&x, &y);
     data->state = LV_INDEV_STATE_REL;
     return;
   }
@@ -158,9 +159,8 @@ static void touch_read_cb(lv_indev_drv_t *drv, lv_indev_data_t *data) {
     // Reset activity timer on touch
     lastActivityTime = millis();
 
-    // Always reassert backlight on touch — guards against LEDC channel loss
-    // (GPIO 42 shared between LovyanGFX Light_PWM and Arduino analogWrite)
-    displaySetBrightness(screenBrightness);
+    // Ensure panel exits sleep on first interaction.
+    displayPanelWake();
 
     if (screenDimmed) {
       screenDimmed = false;
@@ -227,6 +227,26 @@ void LVGL_UI::open_compose_with_callsign(const String &callsign) {
 }
 
 namespace LVGL_UI {
+  static void hideLockHint();
+
+  static void unlockScreenFromLock(const char* source) {
+    const uint32_t now = millis();
+    lockHintRequested = false;
+    hideLockHint();
+    screenLocked = false;
+    screenDimmed = false;
+    lockQPending = false;
+    lastActivityTime = now;
+    absorbTouchUntilRelease = true;
+    displayPanelWake();
+    if (lv_scr_act() == MapState::screen_map) {
+      setCpuFrequencyMhz(240);
+      UIMapManager::redraw_map_canvas();
+    }
+    SD_Logger::logScreenState(false);
+    ESP_LOGI(TAG, "Screen unlocked by %s", source);
+  }
+
   static void hideLockHint() {
     lockHintUntil = 0;
     if (lockHint) lv_obj_add_flag(lockHint, LV_OBJ_FLAG_HIDDEN);
@@ -245,7 +265,7 @@ namespace LVGL_UI {
       lockHintRequested = false;
       if (!lockHint) {
         lockHint = lv_label_create(lv_layer_top());
-        lv_label_set_text(lockHint, LV_SYMBOL_EYE_CLOSE " Screen locked\nPress Q then Space");
+        lv_label_set_text(lockHint, LV_SYMBOL_EYE_CLOSE " Screen locked\nShort press wake\nHold joystick to unlock\n(or Q then Space)");
         lv_obj_set_style_text_font(lockHint, &lv_font_montserrat_18, 0);
         lv_obj_set_style_text_align(lockHint, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_set_style_text_color(lockHint, lv_color_white(), 0);
@@ -259,11 +279,11 @@ namespace LVGL_UI {
       }
       lv_obj_clear_flag(lockHint, LV_OBJ_FLAG_HIDDEN);
       lv_obj_move_foreground(lockHint);
-      if (!lockHintUntil) displaySetBrightness(screenBrightness);
+      if (!lockHintUntil) displayPanelWake();
       lockHintUntil = now + LOCK_HINT_MS;
     } else if (lockHintUntil && (int32_t)(now - lockHintUntil) >= 0) {
       hideLockHint();
-      tft.setBrightness(0);
+        displayPanelSleep();
     }
   }
 
@@ -284,20 +304,21 @@ namespace LVGL_UI {
     const bool unlock = key == ' ' && lockQPending && now - lockQTime <= 1000;
     lockQPending = false;
     if (unlock) {
-      lockHintRequested = false;
-      hideLockHint();
-      screenLocked = false;
-      screenDimmed = false;
-      lastActivityTime = now;
-      absorbTouchUntilRelease = true;
-      displaySetBrightness(screenBrightness);
-      if (lv_scr_act() == MapState::screen_map) {
-        setCpuFrequencyMhz(240);
-        UIMapManager::redraw_map_canvas();
-      }
-      SD_Logger::logScreenState(false);
-      ESP_LOGI(TAG, "Screen unlocked by Q then Space");
+      unlockScreenFromLock("Q then Space");
     }
+    return true;
+  }
+
+  bool handleScreenLockJoystickShort() {
+    if (!screenLocked) return false;
+    lockHintRequested = true;
+    displayPanelWake();
+    return true;
+  }
+
+  bool handleScreenLockJoystickLong() {
+    if (!screenLocked) return false;
+    unlockScreenFromLock("joystick long press");
     return true;
   }
 
@@ -649,7 +670,7 @@ namespace LVGL_UI {
         screenLocked = true;
         lockQPending = false;
 #endif
-        tft.setBrightness(0); // Turn off backlight
+          displayPanelSleep(); // True LCD sleep + backlight off
         // Reduce CPU to 80 MHz if on map screen
         if (lv_scr_act() == MapState::screen_map) {
           setCpuFrequencyMhz(80);

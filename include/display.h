@@ -41,6 +41,8 @@ extern LGFX_TDeck tft;
 #endif
 
 void displaySetBrightness(uint8_t value);
+void displayPanelSleep();
+void displayPanelWake();
 void displaySetup();
 void displayToggle(bool toggle);
 
