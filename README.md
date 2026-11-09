@@ -177,6 +177,22 @@ You will find details about:
 - Messaging and UI operation
 - Advanced settings
 
+## Pirata Launcher (Single BIN)
+
+For LilyGO T-Deck Plus, the build now generates a merged image dedicated to launcher-style install (bootloader + partitions + firmware in one file).
+
+- VS Code task: **PIO: Build Pirata Launcher (T-Deck Plus)**
+- Output in build folder: `.pio/build/<env>/pirata_launcher.bin`
+- Exported copy (stable path): `installer/pirata_launcher/pirata_launcher_<env>.bin`
+
+For a T-Deck Plus 433, build `ttgo_t_deck_plus_433` and use:
+
+- `installer/pirata_launcher/pirata_launcher_ttgo_t_deck_plus_433.bin`
+
+For a T-Deck Plus 868, build `ttgo_t_deck_plus_868` and use:
+
+- `installer/pirata_launcher/pirata_launcher_ttgo_t_deck_plus_868.bin`
+
 ## Technical Details
 
 **Memory**: ~88KB DRAM free during operation, PSRAM for tile/symbol cache and sprites

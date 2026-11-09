@@ -1,0 +1,163 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PIO: Build (selected env)",
+      "type": "shell",
+      "command": "${input:pioCmd}",
+      "args": [
+        "run",
+        "-e",
+        "${input:pioEnv}"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Clean (selected env)",
+      "type": "shell",
+      "command": "${input:pioCmd}",
+      "args": [
+        "run",
+        "-t",
+        "clean",
+        "-e",
+        "${input:pioEnv}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Upload/Flash (selected env)",
+      "type": "shell",
+      "command": "${input:pioCmd}",
+      "args": [
+        "run",
+        "-t",
+        "upload",
+        "-e",
+        "${input:pioEnv}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Serial Monitor",
+      "type": "shell",
+      "command": "${input:pioCmd}",
+      "args": [
+        "device",
+        "monitor",
+        "-b",
+        "${input:monitorSpeed}",
+        "-p",
+        "${input:serialPort}"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Upload then Monitor",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "PIO: Upload/Flash (selected env)",
+        "PIO: Serial Monitor"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Build Pirata Launcher (T-Deck Plus)",
+      "type": "shell",
+      "command": "${input:pioCmd}",
+      "args": [
+        "run",
+        "-e",
+        "${input:pirataDeckEnv}"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pioCmd",
+      "type": "pickString",
+      "description": "PlatformIO command available on your system",
+      "default": "platformio",
+      "options": [
+        "platformio",
+        "pio"
+      ]
+    },
+    {
+      "id": "pioEnv",
+      "type": "pickString",
+      "description": "Select the PlatformIO environment (board/variant)",
+      "default": "ttgo_t_deck_plus_433",
+      "options": [
+        "crowpanel_advance_35",
+        "ESP32S3_DIY_LoRa_GPS",
+        "ESP32S3_DIY_LoRa_GPS_915",
+        "esp32_c3_DIY_LoRa_GPS",
+        "esp32_c3_DIY_LoRa_GPS_915",
+        "ESP32_DIY_1W_LoRa_GPS",
+        "ESP32_DIY_1W_LoRa_GPS_915",
+        "ESP32_DIY_1W_LoRa_GPS_LLCC68",
+        "ESP32_DIY_LoRa_GPS",
+        "ESP32_DIY_LoRa_GPS_915",
+        "F4GOH_1W_LoRa_Tracker",
+        "F4GOH_1W_LoRa_Tracker_LLCC68",
+        "heltec-lora32-v2_GPS",
+        "heltec-lora32-v2_GPS_915",
+        "heltec-lora32-v2_TNC",
+        "heltec_ht-ct62_GPS",
+        "heltec_wifi_lora_32_v3_2_GPS",
+        "heltec_wifi_lora_32_v3_2_TNC",
+        "heltec_wifi_lora_32_v3_GPS",
+        "heltec_wifi_lora_32_v3_TNC",
+        "heltec_wireless_stick_lite_v3_GPS_display",
+        "heltec_wireless_tracker",
+        "OE5HWN_MeshCom",
+        "QRPLabs_LightTracker_Plus_1_0",
+        "RPC_Electronics_1W_LoRa_GPS",
+        "TROY_LoRa_APRS",
+        "ttgo-t-beam-v0_7",
+        "ttgo-t-beam-v1",
+        "ttgo-t-beam-v1_2",
+        "ttgo-t-beam-v1_2_915",
+        "ttgo-t-beam-v1_2_SX1262",
+        "ttgo-t-beam-v1_915",
+        "ttgo-t-beam-v1_SX1268",
+        "ttgo-t-lora32-v2_1_GPS",
+        "ttgo-t-lora32-v2_1_GPS_915",
+        "ttgo-t-lora32-v2_1_TNC",
+        "ttgo-t-lora32-v2_1_TNC_915",
+        "ttgo_t_beam_s3_SUPREME_v3",
+        "ttgo_t_deck_GPS",
+        "ttgo_t_deck_plus_433",
+        "ttgo_t_deck_plus_868",
+        "Wemos_ESP32_Bat_LoRa_GPS"
+      ]
+    },
+    {
+      "id": "serialPort",
+      "type": "promptString",
+      "description": "Serial device port (examples: COM5, /dev/ttyUSB0)",
+      "default": "COM5"
+    },
+    {
+      "id": "monitorSpeed",
+      "type": "promptString",
+      "description": "Serial monitor baud rate",
+      "default": "115200"
+    },
+    {
+      "id": "pirataDeckEnv",
+      "type": "pickString",
+      "description": "Select T-Deck Plus environment for Pirata Launcher merged binary",
+      "default": "ttgo_t_deck_plus_433",
+      "options": [
+        "ttgo_t_deck_plus_433",
+        "ttgo_t_deck_plus_868"
+      ]
+    }
+  ]
+}

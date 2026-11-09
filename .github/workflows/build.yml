@@ -50,6 +50,7 @@ jobs:
                   cp .pio/build/${{ matrix.target.name }}/firmware.bin installer/firmware/
                   cp .pio/build/${{ matrix.target.name }}/bootloader.bin installer/firmware/
                   cp .pio/build/${{ matrix.target.name }}/partitions.bin installer/firmware/
+                  cp .pio/build/${{ matrix.target.name }}/pirata_launcher.bin installer/firmware/pirata_launcher_${{ matrix.target.name }}.bin || true
                   cp .pio/build/${{ matrix.target.name }}/spiffs.bin installer/firmware/
                   cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin installer/firmware/
               
